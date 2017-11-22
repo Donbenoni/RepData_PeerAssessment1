@@ -1,25 +1,92 @@
 ---
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
+title: "PA1_template.Rmd\U0001D681\U0001D696\U0001D68D"
+author: "Donbenoni"
+date: "15 November 2017"
+output: html_document
 ---
+# Code for reading in the dataset and/or processing the data
 
+```{r}
+download.file("https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip", destfile = "Actmon.zip" )
+unzip("actmon.zip")
+filex <- read.csv("activity.csv", header = TRUE)
+filex$date<-as.Date(filex$date)
+totalstepsperday <- aggregate(steps ~ date, data = filex, FUN = sum, na.rm = TRUE)
+```
 
-## Loading and preprocessing the data
+# Histogram of the total number of steps taken each day
 
+```{r}
+hist(totalstepsperday$steps, breaks = 25, main = "Total Steps Per Day", xlab = "Number of steps per day", ylab = "Frequency", col = "Magenta")
+```
 
+# Mean and median number of steps taken each day
 
-## What is mean total number of steps taken per day?
+```{r}
+totalstmean <- mean(totalstepsperday$steps)
+totalstmedian <- median(totalstepsperday$steps)
+```
 
+## Call mean and median
+```{r}
+totalstmean
+```
+```{r}
+totalstmedian
 
+```
 
-## What is the average daily activity pattern?
+# Time series plot
+## Time series plot of the average number of steps taken
+```{r}
+avgstepstkn <- aggregate(filex$steps, by=list(filex$interval), FUN=mean, na.rm=TRUE)
+colnames(avgstepstkn) <- c("Interval", "Steps")
+library(ggplot2)
+ggplot(aes(x = Interval, y = Steps), data = avgstepstkn) + geom_line() + theme_bw()
+```
 
+# The 5-minute interval that, on average, contains the maximum number of steps
+```{r}
+avgstepstkn[avgstepstkn$Steps==max(avgstepstkn$Steps),1]
+```
+# Code to describe and show a strategy for imputing missing data
+## Calculate number of NA's in data
+```{r}
+sum(is.na(filex$steps))
+```
+## Remove NA's
+```{r}
+filex$steps[is.na(filex$steps)] <- mean(filex$steps, na.rm = TRUE)
+```
+## See if NA's are removed
+```{r}
+sum(is.na(filex$steps))
+```
+# Histogram of the total number of steps taken each day after missing values are imputed
+```{r}
+Totsteps <- aggregate(filex$steps, by = list(filex$date), FUN = sum, na.rm = TRUE)
+hist(Totsteps$x, breaks = seq(from = 0, to = 25000, by = 2500), col = "red", xlab = "Number of steps taken", ylim = c(0,30), main = "Total number of steps taken each day after missing values are imputed")
+```
+## Mean and median of data without NA's
+```{r}
+mean(Totsteps$x)
+```
+```{r}
+median(Totsteps$x)
+```
 
+# Panel plot comparing the average number of steps taken per 5-minute interval across weekdays and weekends
+```{r}
+# Convert into days of the week.
+filex$days=tolower(weekdays(filex$date))
+filex$day_type <- ifelse(filex$days == "saturday" | filex$days == "sunday", "weekend", "weekday")
 
-## Imputing missing values
+# Mean steps taken
+avgst2 <- aggregate(filex$steps, by = list(filex$interval, filex$day_type), FUN = mean, na.rm=TRUE)
+colnames(avgst2) <- c("interval","day_type","steps")
 
+# Load ggplot for Panel plot
+library(ggplot2)
+ggplot(aes(x = interval, y = steps), data = avgst2) + geom_line() + facet_wrap( ~ avgst2$day_type) + theme_dark()
+```
 
-
-## Are there differences in activity patterns between weekdays and weekends?
